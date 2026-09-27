@@ -77,7 +77,8 @@ class ControllerExtensionPaymentSveapartpayment extends SveaCommon
 
         if ($data['countryCode'] == "SE") {
             $termsLink = 'https://cdn.svea.com/webpay/sv-SE/terms_paymentplan_payment_20161005.pdf';
-            $companyName = 'Svea Ekonomis';
+            $companyName = 'Svea Banks';
+            //$companyName = 'Svea Ekonomis';
         } elseif ($data['countryCode'] == "NO") {
             $termsLink = 'https://betaling.sveafinans.no/dokumenter/Vilkaar_Svea_Checkout.pdf';
             $companyName = 'Svea Finans';
