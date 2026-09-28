@@ -1,0 +1,242 @@
+.svea-product-price {
+    position: relative;
+    margin: 10px 0;
+}
+
+.svea-product-price__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: #002c50;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.svea-product-price__trigger:hover {
+    background: #f3f7f9;
+}
+
+.svea-product-price__trigger:focus,
+.svea-product-price__close:focus,
+.svea-product-price__retry:focus {
+    outline: 2px solid #007c98;
+    outline-offset: 2px;
+}
+
+.svea-product-price__logo {
+    flex: 0 0 auto;
+    width: 76px;
+    height: 28px;
+    fill: #002c50;
+}
+
+.svea-product-price__logo-underline {
+    fill: #00aece;
+}
+
+.svea-product-price__trigger-text {
+    color: #1f2933;
+    font-size: 15px;
+    line-height: 20px;
+}
+
+.svea-product-price__info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #40647d;
+    border-radius: 50%;
+    color: #002c50;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.svea-product-price__dialog {
+    position: fixed;
+    z-index: 10020;
+    top: 50%;
+    left: 50%;
+    width: calc(100vw - 24px);
+    max-width: 1040px;
+    max-height: calc(100vh - 24px);
+    transform: translate(-50%, -50%);
+    overflow: auto;
+    border: 1px solid #d5dde2;
+    border-radius: 4px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .28);
+    background: #fff;
+    color: #111;
+}
+
+.svea-product-price__dialog[hidden] {
+    display: none;
+}
+
+.svea-product-price__dialog-header {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e1e6e9;
+    background: #fff;
+}
+
+.svea-product-price__dialog-header h2 {
+    margin: 0;
+    color: #002c50;
+    font-size: 22px;
+    line-height: 28px;
+}
+
+.svea-product-price__close {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #222;
+    font-size: 30px;
+    line-height: 30px;
+    cursor: pointer;
+}
+
+.svea-product-price__body {
+    min-height: 100px;
+    padding: 20px;
+}
+
+.svea-product-price__state {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    min-height: 60px;
+    font-size: 15px;
+}
+
+.svea-product-price__spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #cbd6dc;
+    border-top-color: #007c98;
+    border-radius: 50%;
+    animation: svea-product-price-spin .8s linear infinite;
+}
+
+@keyframes svea-product-price-spin {
+    to { transform: rotate(360deg); }
+}
+
+.svea-product-price__retry {
+    padding: 7px 12px;
+    border: 1px solid #007c98;
+    border-radius: 3px;
+    background: #007c98;
+    color: #fff;
+    cursor: pointer;
+}
+
+.svea-product-price__example h3 {
+    margin: 0 0 16px;
+    color: #002c50;
+    font-size: 19px;
+}
+
+.svea-product-price__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 28px;
+    margin: 0 0 20px;
+}
+
+.svea-product-price__facts > div {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(0, 1.25fr);
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid #edf0f2;
+}
+
+.svea-product-price__facts dt {
+    font-weight: 700;
+}
+
+.svea-product-price__facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.svea-credit-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px;
+    background: #fff;
+    color: #000;
+    font-size: 14px;
+    line-height: 18px;
+}
+
+.svea-credit-warning__symbol {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+    max-width: none;
+}
+
+.svea-credit-warning p {
+    margin: 0;
+}
+
+.svea-credit-warning a {
+    color: #000;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+    .svea-product-price__body {
+        padding: 14px;
+    }
+
+    .svea-product-price__facts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 374px) {
+    .svea-product-price__trigger {
+        gap: 6px;
+        padding-right: 4px;
+        padding-left: 4px;
+    }
+
+    .svea-product-price__logo {
+        width: 68px;
+        height: 25px;
+    }
+
+    .svea-product-price__facts > div {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .svea-credit-warning {
+        gap: 8px;
+    }
+}

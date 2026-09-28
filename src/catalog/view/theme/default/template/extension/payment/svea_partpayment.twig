@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="{{ product_price_stylesheet }}">
 <div class="container-fluid">
     <div>{{ logo }}</div>
 
@@ -52,7 +53,9 @@
                 </script>
             {% endif %}
     {% endif %}
+{% if paymentOptions != empty and paymentOptions.error is not defined %}
 <br />
+    {{ credit_warning }}
 <br />
     <div style="display:inline-block;">
     <p>{{ termsOfService1 }} <a href="{{ termsLink }}">{{ companyName }} {{ termsOfService2 }} </a> {{ termsOfService3 }}</p>
@@ -324,3 +327,4 @@ $(document).ready(function () {
     }
 });
 </script>
+{% endif %}

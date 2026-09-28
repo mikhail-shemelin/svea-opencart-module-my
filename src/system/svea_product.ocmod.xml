@@ -5,7 +5,7 @@
     <version>4.5.2</version>
     <author>Anneli Halld'n, Kristian Grossman-Madsen / Svea Ekonomi AB, SveaWebPay</author>
     <link>https://github.com/sveawebpay/opencart-module</link>
-    
+
     <file path="catalog/controller/product/product.php">
         <!--inserted after line 319 where $data['price'] is being set in controller product.php -->
         <operation name="svea controller load data to view">
@@ -19,12 +19,12 @@
                 {
                     $paymentString = "";
                 }
-                
+
                 $data[$paymentString . 'svea_widget'] = $this->load->controller('extension/svea/widget_product_price', $product_info);
-                
+
             ]]></add>
         </operation>
-       
+
     </file>
     <file path="catalog/view/theme/*/template/product/product.tpl" error="skip">
         <!--inserted between cart and review divs in product.tpl -->
@@ -53,5 +53,17 @@
             ]]></add>
         </operation>
     </file>
-    
+    <file path="system/library/session.php">
+        <operation name="skip session write for read-only Svea product calculation">
+            <search><![CDATA[
+	public function close() {
+            ]]></search>
+            <add position="after"><![CDATA[
+		if (!empty($this->data['svea_product_calculation_read_only'])) {
+			return;
+		}
+            ]]></add>
+        </operation>
+    </file>
+
 </modification>

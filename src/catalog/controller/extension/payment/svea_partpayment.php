@@ -36,6 +36,7 @@ class ControllerExtensionPaymentSveapartpayment extends SveaCommon
         $this->setVersionStrings();
 
         $this->load->language('extension/payment/svea_partpayment');
+        $this->load->language('extension/svea/product_price');
 
         $this->load->model('checkout/order');
 
@@ -71,12 +72,16 @@ class ControllerExtensionPaymentSveapartpayment extends SveaCommon
 
         // We show the available payment plans w/monthly amounts as radiobuttons under the logo
         $data['paymentOptions'] = $this->getPaymentOptions();
+        $data['product_price_stylesheet'] = 'catalog/view/theme/default/stylesheet/svea/product_price.css';
+        $data['credit_warning'] = $data['countryCode'] === 'SE'
+            ? $this->load->view('extension/svea/credit_warning', array())
+            : '';
 
         $termsLink = '';
         $companyName = '';
 
         if ($data['countryCode'] == "SE") {
-            $termsLink = 'https://cdn.svea.com/webpay/sv-SE/terms_paymentplan_payment_20161005.pdf';
+            $termsLink = 'https://cdn.svea.com/webpay/sv-SE/WP_Allmanna%20villkor%20Delbetalning_Konto.pdf';
             $companyName = 'Svea Banks';
             //$companyName = 'Svea Ekonomis';
         } elseif ($data['countryCode'] == "NO") {
@@ -374,65 +379,110 @@ class ControllerExtensionPaymentSveapartpayment extends SveaCommon
 
         $result = array();
 
-        if ($this->config->get($this->paymentString . 'svea_partpayment_testmode_' . $countryCode) !== null) {
-            $svea = $this->model_extension_payment_svea_partpayment->getPaymentPlanParams($countryCode);
-        } else {
+        if ($this->config->get($this->paymentString . 'svea_partpayment_testmode_' . $countryCode) === null) {
             $result = array("error" => $this->responseCodes(40001, "The country is not supported for this paymentmethod"));
 
             return $result;
         }
 
-        if (!isset($svea)) {
-            $result = array("error" => 'Svea error: '.$this->language->get('response_27000'));
-        } else {
-            $currency = $order['currency_code'];
+        $currency = $order['currency_code'];
 
-            $this->load->model('localisation/currency');
+        if ($countryCode !== 'SE' || $currency !== 'SEK') {
+            return $this->getLegacyPaymentOptions($countryCode, $currency, $order['total']);
+        }
 
-            $currencies = $this->model_localisation_currency->getCurrencies();
-            $decimals = "";
+        $calculation = $this->model_extension_payment_svea_partpayment->getDynamicPaymentPlans(
+            (float)$order['total'],
+            $currency,
+            $countryCode
+        );
 
-            foreach ($currencies as $key => $val) {
-                if ($key == $currency) {
-                    if ($key == 'EUR') {
-                        $decimals = 2;
-                    } else {
-                        $decimals = 0;
-                    }
-                }
-            }
+        if ($calculation['status'] === 'error') {
+            return array('error' => $this->language->get('text_error'));
+        }
 
-            $formattedPrice = round($this->currency->format(($order['total']), $currency, false, false), $decimals);
+        if ($calculation['status'] !== 'success') {
+            return array();
+        }
 
-            try {
-                $campaigns = PaymentPlanCalculator::getAllCalculationsFromCampaigns($formattedPrice, $svea->campaignCodes, false, $decimals);
+        foreach ($calculation['campaigns'] as $campaign) {
+            $result[] = array(
+                "campaignCode"               => $campaign['campaignCode'],
+                "description"                => htmlspecialchars((string)$campaign['description'], ENT_QUOTES, 'UTF-8'),
+                "monthlyAmountToPay"         => $campaign['monthlyAmountToPay'] . " " . $currency . "/" . $this->language->get('month'),
+                "paymentPlanType"            => $campaign['paymentPlanType'],
+                "contractLengthInMonths"     => $this->language->get('contractLengthInMonths') . ": " . $campaign['contractLengthInMonths'] . " " . $this->language->get('unit'),
+                "monthlyAnnuityFactor"       => $campaign['monthlyAnnuityFactor'],
+                "initialFee"                 => $this->language->get('initialFee') . ": " . $campaign['initialFee'] . " " . $currency,
+                "notificationFee"            => $this->language->get('notificationFee') . ": " . $campaign['notificationFee'] . " " . $currency,
+                "interestRatePercent"        => $this->language->get('interestRatePercent') . ": " . $campaign['interestRatePercent'] . "%",
+                "numberOfInterestFreeMonths" => $campaign['numberOfInterestFreeMonths'] != 0 ? $this->language->get('numberOfInterestFreeMonths') . ": " . $campaign['numberOfInterestFreeMonths'] . " " . $this->language->get('unit') : 0,
+                "numberOfPaymentFreeMonths"  => $campaign['numberOfPaymentFreeMonths'] != 0 ? $this->language->get('numberOfPaymentFreeMonths') . ": " . $campaign['numberOfPaymentFreeMonths'] . " " . $this->language->get('unit') : 0,
+                "totalAmountToPay"           => $this->language->get('totalAmountToPay') . ": " . $campaign['totalAmountToPay'] . " " . $currency,
+                "effectiveInterestRate"      => $this->language->get('effectiveInterestRate') . ": " . $campaign['effectiveInterestRate'] . "%"
+            );
+        }
 
-                foreach ($campaigns as $campaign) {
-                    foreach ($svea->campaignCodes as $cc) {
-                        if ($campaign['campaignCode'] == $cc->campaignCode) {
-                            $result[] = array(
-                                "campaignCode"               => $campaign['campaignCode'],
-                                "description"                => $campaign['description'],
-                                "monthlyAmountToPay"         => $campaign['monthlyAmountToPay'] . " " . $currency . "/" . $this->language->get('month'),
-                                "paymentPlanType"            => $campaign['paymentPlanType'],
-                                "contractLengthInMonths"     => $this->language->get('contractLengthInMonths') . ": " . $campaign['contractLengthInMonths'] . " " . $this->language->get('unit'),
-                                "monthlyAnnuityFactor"       => $campaign['monthlyAnnuityFactor'],
-                                "initialFee"                 => $this->language->get('initialFee') . ": " . $campaign['initialFee'] . " " . $currency,
-                                "notificationFee"            => $this->language->get('notificationFee') . ": " . $campaign['notificationFee'] . " " . $currency,
-                                "interestRatePercent"        => $this->language->get('interestRatePercent') . ": " . $campaign['interestRatePercent'] . "%",
-                                "numberOfInterestFreeMonths" => $campaign['numberOfInterestFreeMonths'] != 0 ? $this->language->get('numberOfInterestFreeMonths') . ": " . $campaign['numberOfInterestFreeMonths'] . " " . $this->language->get('unit') : 0,
-                                "numberOfPaymentFreeMonths"  => $campaign['numberOfPaymentFreeMonths'] != 0 ? $this->language->get('numberOfPaymentFreeMonths') . ": " . $campaign['numberOfPaymentFreeMonths'] . " " . $this->language->get('unit') : 0,
-                                "totalAmountToPay"           => $this->language->get('totalAmountToPay') . ": " . $campaign['totalAmountToPay'] . " " . $currency,
-                                "effectiveInterestRate"      => $this->language->get('effectiveInterestRate') . ": " . $campaign['effectiveInterestRate'] . "%"
-                            );
-                            break;
-                        }
-                    }
-                }
-            } catch (Exception $exception) {
-                $this->log->write('Svea: Unable to fetch calculations for campaigns. Exception: ' . $exception->getMessage());
+        return $result;
+    }
+
+    private function getLegacyPaymentOptions($countryCode, $currency, $orderTotal)
+    {
+        $svea = $this->model_extension_payment_svea_partpayment->getPaymentPlanParams($countryCode);
+
+        if (!$svea) {
+            return array("error" => 'Svea error: '.$this->language->get('response_27000'));
+        }
+
+        $this->load->model('localisation/currency');
+
+        $currencies = $this->model_localisation_currency->getCurrencies();
+        $decimals = 0;
+
+        foreach ($currencies as $key => $value) {
+            if ($key == $currency) {
+                $decimals = $key == 'EUR' ? 2 : 0;
+                break;
             }
         }
+
+        $formattedPrice = round($this->currency->format($orderTotal, $currency, false, false), $decimals);
+        $result = array();
+
+        try {
+            $campaigns = PaymentPlanCalculator::getAllCalculationsFromCampaigns(
+                $formattedPrice,
+                $svea->campaignCodes,
+                false,
+                $decimals
+            );
+
+            foreach ($campaigns as $campaign) {
+                foreach ($svea->campaignCodes as $campaignParameters) {
+                    if ($campaign['campaignCode'] == $campaignParameters->campaignCode) {
+                        $result[] = array(
+                            "campaignCode"               => $campaign['campaignCode'],
+                            "description"                => htmlspecialchars((string)$campaign['description'], ENT_QUOTES, 'UTF-8'),
+                            "monthlyAmountToPay"         => $campaign['monthlyAmountToPay'] . " " . $currency . "/" . $this->language->get('month'),
+                            "paymentPlanType"            => $campaign['paymentPlanType'],
+                            "contractLengthInMonths"     => $this->language->get('contractLengthInMonths') . ": " . $campaign['contractLengthInMonths'] . " " . $this->language->get('unit'),
+                            "monthlyAnnuityFactor"       => $campaign['monthlyAnnuityFactor'],
+                            "initialFee"                 => $this->language->get('initialFee') . ": " . $campaign['initialFee'] . " " . $currency,
+                            "notificationFee"            => $this->language->get('notificationFee') . ": " . $campaign['notificationFee'] . " " . $currency,
+                            "interestRatePercent"        => $this->language->get('interestRatePercent') . ": " . $campaign['interestRatePercent'] . "%",
+                            "numberOfInterestFreeMonths" => $campaign['numberOfInterestFreeMonths'] != 0 ? $this->language->get('numberOfInterestFreeMonths') . ": " . $campaign['numberOfInterestFreeMonths'] . " " . $this->language->get('unit') : 0,
+                            "numberOfPaymentFreeMonths"  => $campaign['numberOfPaymentFreeMonths'] != 0 ? $this->language->get('numberOfPaymentFreeMonths') . ": " . $campaign['numberOfPaymentFreeMonths'] . " " . $this->language->get('unit') : 0,
+                            "totalAmountToPay"           => $this->language->get('totalAmountToPay') . ": " . $campaign['totalAmountToPay'] . " " . $currency,
+                            "effectiveInterestRate"      => $this->language->get('effectiveInterestRate') . ": " . $campaign['effectiveInterestRate'] . "%"
+                        );
+                        break;
+                    }
+                }
+            }
+        } catch (Exception $exception) {
+            $this->log->write('Svea: Unable to fetch calculations for campaigns. Exception: ' . $exception->getMessage());
+        }
+
         return $result;
     }
 
@@ -444,7 +494,7 @@ class ControllerExtensionPaymentSveapartpayment extends SveaCommon
 
         $order = $this->model_checkout_order->getOrder($this->session->data['order_id']);
         $countryCode = $order['payment_iso_code_2'];
-        $paymentOptions = $this->getPaymentOptions();
+        $paymentOptions = array();
 
         if ($countryCode == "SE" || $countryCode == "DK") {
             $addresses = $this->getAddress($this->request->post['ssn']);
